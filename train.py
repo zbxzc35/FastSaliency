@@ -20,7 +20,7 @@ from torch.utils.data import sampler
 
 
 parser = argparse.ArgumentParser(description='PyTorch Training')
-parser.add_argument('--batch_size', default=64, type=int, metavar='BT',
+parser.add_argument('--batch_size', default=32, type=int, metavar='BT',
                     help='batch size')
 parser.add_argument('--lr', '--learning_rate', default=1e-4, type=float,
                     metavar='LR', help='initial learning rate')
@@ -141,22 +141,35 @@ def train(train_loader, model, optimizer, epoch):
 
         # prepare input
         input = data['img'].float()
-        target = data['gt28'].float()
+        target28 = data['gt28'].float()
+        target56 = data['gt56'].float()
+        target112 = data['gt112'].float()
+        target224 = data['gt224'].float()
         if args.cuda:
-            # input_var = torch.autograd.Variable(input)
             input_var = torch.autograd.Variable(input).cuda()
-            target_var = torch.autograd.Variable(target).cuda()
-            target = target.cuda()
+            target28_var = torch.autograd.Variable(target28).cuda()
+            target56_var = torch.autograd.Variable(target56).cuda()
+            target112_var = torch.autograd.Variable(target112).cuda()
+            target224_var = torch.autograd.Variable(target224).cuda()
+            # target = target.cuda()
         else:
-            input_var = torch.autograd.Variable(input)
-            target_var = torch.autograd.Variable(target)
+            pass
+            # Not implemented
+            # input_var = torch.autograd.Variable(input)
+            # target_var = torch.autograd.Variable(target)
 
         # compute output
         # hidden_maps.register_hook(lambda grad: print(grad.size()))
-        output = model(input_var)
+        pred_224, pred_112, pred_56, pred_28_c4, pred_28_c5, pred_28_cs = model(input_var)
         # make_dot(output)
         # output = output.squeeze()
-        loss = F.binary_cross_entropy_with_logits(torch.squeeze(output, 1), target_var)
+        loss_28_cs = F.binary_cross_entropy_with_logits(torch.squeeze(pred_28_cs, 1), target28_var)
+        loss_28_c5 = F.binary_cross_entropy_with_logits(torch.squeeze(pred_28_c5, 1), target28_var)
+        loss_28_c4 = F.binary_cross_entropy_with_logits(torch.squeeze(pred_28_c4, 1), target28_var)
+        loss_56 = F.binary_cross_entropy_with_logits(torch.squeeze(pred_56, 1), target56_var)
+        loss_112 = F.binary_cross_entropy_with_logits(torch.squeeze(pred_112, 1), target112_var)
+        loss_224 = F.binary_cross_entropy_with_logits(torch.squeeze(pred_224, 1), target224_var)
+        loss = loss_28_cs + loss_28_c5 + loss_28_c4 + loss_56 + loss_112 + loss_224
         if args.cuda:
             loss = loss.cuda()
 
@@ -198,18 +211,33 @@ def validation(val_loader, model):
     end = time.time()
     for i, data in enumerate(val_loader):
         input = data['img'].float()
-        target = data['gt28'].float()
+        target28 = data['gt28'].float()
+        target56 = data['gt56'].float()
+        target112 = data['gt112'].float()
+        target224 = data['gt224'].float()
         if args.cuda:
-            input_var = torch.autograd.Variable(input, volatile=True).cuda()
-            target_var = torch.autograd.Variable(target, volatile=True).cuda()
-            target = target.cuda()
+            input_var = torch.autograd.Variable(input).cuda()
+            target28_var = torch.autograd.Variable(target28).cuda()
+            target56_var = torch.autograd.Variable(target56).cuda()
+            target112_var = torch.autograd.Variable(target112).cuda()
+            target224_var = torch.autograd.Variable(target224).cuda()
         else:
-            input_var = torch.autograd.Variable(input, volatile=True)
-            target_var = torch.autograd.Variable(target, volatile=True)
+            pass
+            # Not implemented
 
         # compute output
-        output = model(input_var)
-        loss = F.binary_cross_entropy_with_logits(torch.squeeze(output, 1), target_var)
+        # output = model(input_var)
+        # loss = F.binary_cross_entropy_with_logits(torch.squeeze(output, 1), target_var)
+        pred_224, pred_112, pred_56, pred_28_c4, pred_28_c5, pred_28_cs = model(input_var)
+        # make_dot(output)
+        # output = output.squeeze()
+        loss_28_cs = F.binary_cross_entropy_with_logits(torch.squeeze(pred_28_cs, 1), target28_var)
+        loss_28_c5 = F.binary_cross_entropy_with_logits(torch.squeeze(pred_28_c5, 1), target28_var)
+        loss_28_c4 = F.binary_cross_entropy_with_logits(torch.squeeze(pred_28_c4, 1), target28_var)
+        loss_56 = F.binary_cross_entropy_with_logits(torch.squeeze(pred_56, 1), target56_var)
+        loss_112 = F.binary_cross_entropy_with_logits(torch.squeeze(pred_112, 1), target112_var)
+        loss_224 = F.binary_cross_entropy_with_logits(torch.squeeze(pred_224, 1), target224_var)
+        loss = loss_28_cs + loss_28_c5 + loss_28_c4 + loss_56 + loss_112 + loss_224
         if args.cuda:
             loss = loss.cuda()
 

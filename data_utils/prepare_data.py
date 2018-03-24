@@ -110,7 +110,7 @@ class SalData(Dataset):
         gt = resize(gt, (224, 224), mode='reflect')
         gt112 = resize(gt, (112, 112), mode='reflect')
         gt56 = resize(gt, (56, 56), mode='reflect')
-        gt28 = resize(gt, (14, 14), mode='reflect')
+        gt28 = resize(gt, (28, 28), mode='reflect')
         # Normalize
         normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         img = normalize(img)
