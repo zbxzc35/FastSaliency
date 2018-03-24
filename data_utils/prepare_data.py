@@ -6,14 +6,11 @@ Data loading script for saliency detection with multi-scale supervision
 """
 
 import os
-import shutil
-import pandas as pd
-import torch
 import numpy as np
 # from bs4 import BeautifulSoup
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 import skimage
-from skimage import io, transform
+from skimage import io
 from skimage.transform import resize
 import random
 import torchvision.transforms as transforms
@@ -93,27 +90,27 @@ class SalData(Dataset):
         self.dataDir = dataDir
         _, self.imgList = fold_files(os.path.join(dataDir, 'images'))
         self.augmentation = augmentation
+        self.mean = [0.485, 0.456, 0.406]
+        self.std = [0.229, 0.224, 0.225]
 
     def __len__(self):
         return len(self.imgList)
 
     def __getitem__(self, idx):
         imgName = self.imgList[idx]
-        img = io.imread(os.path.join(self.dataDir, 'images', imgName + '.jpg'))
+        img = skimage.img_as_float(io.imread(os.path.join(self.dataDir, 'images', imgName + '.jpg')))
         gt = skimage.img_as_float(io.imread(os.path.join(self.dataDir, 'GT', imgName + '.png')))
         if self.augmentation is True:
             aug = Augment(size_h=15, size_w=15, p_flip=0.5)
             img, gt = aug(img, gt)
-        toTensor = transforms.ToTensor()  # ToTensor do both convert to float and transpose
         img = resize(img, (224, 224), mode='reflect')
-        img = toTensor(img)
         gt = resize(gt, (224, 224), mode='reflect')
         gt112 = resize(gt, (112, 112), mode='reflect')
         gt56 = resize(gt, (56, 56), mode='reflect')
         gt28 = resize(gt, (28, 28), mode='reflect')
-        # Normalize
-        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        img = normalize(img)
+        # Normalize image
+        img = (img - self.mean) / self.std
+        img = np.transpose(img, (2, 0, 1))
 
         sample = {'img': img, 'gt224': gt, 'gt112': gt112, 'gt56': gt56, 'gt28': gt28}
         return sample

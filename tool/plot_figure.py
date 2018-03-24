@@ -31,6 +31,7 @@ def plot_from_npy(npyfile):
     plt.ylabel('loss')
     plt.title('training loss')
     plt.show()
+    plt.savefig('../data/log/loss_curve.png')
 
 
 if __name__ == '__main__':

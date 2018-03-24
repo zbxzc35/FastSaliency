@@ -11,7 +11,7 @@ import numpy as np
 import shutil
 import time
 import datetime
-from model.model import ResSal
+from model.model import ResSal, load_pretrained
 import data_utils.prepare_data as sal_data
 import argparse
 import torchvision.transforms as transforms
@@ -289,50 +289,6 @@ def prepare_data(data_dir, val_ratio):
         dataset, batch_size=args.batch_size, sampler=val_sampler,
         num_workers=args.workers, drop_last=True)
     return train_loader, val_loader
-
-
-def gen_loss_weight(target):
-    """generate weight for loss, maybe not necessary"""
-    positive_num = torch.sum(target, 1)
-    class_num = torch.FloatTensor([target.size(1)]).cuda() if args.cuda else torch.Tensor([target.size(1)])
-    negative_num = class_num - positive_num
-    weight = torch.div(negative_num, positive_num)
-    weight = weight.expand((target.size(0), target.size(1)))
-    return torch.mul(weight, target)
-
-
-def load_pretrained(model, optimizer, fname):
-    """
-    resume training from previous checkpoint
-    :param fname: filename(with path) of checkpoint file
-    :return: model, optimizer, checkpoint epoch
-    """
-    if os.path.isfile(fname):
-        print("=> loading checkpoint '{}'".format(fname))
-        checkpoint = torch.load(fname)
-        model.load_state_dict(checkpoint['state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer'])
-        return model, optimizer, checkpoint['epoch']
-    else:
-        print("=> no checkpoint found at '{}'".format(fname))
-
-
-def accuracy(output, target, threshold=0.5):
-    """
-    Compute precision for multi-label classification part
-    accuracy = predict joint target / predict union target
-    Use sigmoid function and a threshold to determine the label of output
-    :param output: class scores from last fc layer of the model
-    :param target: binary list of classes
-    :param threshold: threshold for determining class
-    :return: accuracy
-    """
-    sigmoid = torch.sigmoid(output)
-    predict = sigmoid > threshold
-    target = target > 0
-    joint = torch.sum(torch.mul(predict.data, target))
-    union = torch.sum(torch.add(predict.data, target) > 0)
-    return joint / union
 
 
 class AverageMeter(object):

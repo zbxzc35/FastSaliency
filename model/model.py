@@ -162,3 +162,22 @@ class ResSal(nn.Module):
                                F.upsample(res2, scale_factor=2, mode='bilinear'))
 
         return sal1, sal2, sal3, sal4, sal5, sal_coarse
+
+
+def load_pretrained(model, fname, optimizer=None):
+    """
+    resume training from previous checkpoint
+    :param fname: filename(with path) of checkpoint file
+    :return: model, optimizer, checkpoint epoch
+    """
+    if os.path.isfile(fname):
+        print("=> loading checkpoint '{}'".format(fname))
+        checkpoint = torch.load(fname)
+        model.load_state_dict(checkpoint['state_dict'])
+        if optimizer is not None:
+            optimizer.load_state_dict(checkpoint['optimizer'])
+            return model, optimizer, checkpoint['epoch']
+        else:
+            return model, checkpoint['epoch']
+    else:
+        print("=> no checkpoint found at '{}'".format(fname))
