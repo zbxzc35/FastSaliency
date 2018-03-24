@@ -22,12 +22,16 @@ from torch.utils.data import sampler
 parser = argparse.ArgumentParser(description='PyTorch Training')
 parser.add_argument('--batch_size', default=64, type=int, metavar='BT',
                     help='batch size')
-parser.add_argument('--lr', '--learning_rate', default=1e-6, type=float,
+parser.add_argument('--lr', '--learning_rate', default=1e-4, type=float,
                     metavar='LR', help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
                     help='momentum')
 parser.add_argument('--weight-decay', '--wd', default=5e-4, type=float,
                     metavar='W', help='default weight decay')
+parser.add_argument('--step-size', '--ss', default=2, type=int,
+                    metavar='SS', help='learning rate step size')
+parser.add_argument('--gamma', '--gm', default=0.5, type=float,
+                    help='learning rate decay parameter: Gamma')
 parser.add_argument('-j', '--workers', default=4, type=int, metavar='N',
                     help='number of data loading workers (default: 1)')
 parser.add_argument('--epochs', default=40, type=int, metavar='N',
@@ -92,6 +96,8 @@ def main():
     for epoch in range(args.start_epoch, args.epochs):
         tr_avg_loss, tr_detail_loss = train(train_loader, net, optimizer, epoch)
         val_avg_loss = validation(val_loader, net)
+
+        adjust_lr(optimizer=optimizer, epoch=epoch, step_size=args.step_size, gamma=args.gamma)
 
         # save train/val loss/accuracy, save every epoch in case of early stop
         train_loss.append(tr_avg_loss)
@@ -222,6 +228,15 @@ def validation(val_loader, model):
                     f.write(info + '\n')
 
     return losses.avg
+
+
+def adjust_lr(optimizer, epoch, step_size, gamma):
+    # Adjust learning rate every step_size epochs, lr_policy: step
+    if (epoch + 1) > 0 and (epoch + 1) % step_size == 0:
+        pre_lr = optimizer.param_groups[0]['lr']
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = param_group['lr'] * gamma  # gamma
+        print("Adjust learning rate, pre_lr: {}, current_lr: {}".format(pre_lr, optimizer.param_groups[0]['lr']))
 
 
 def save_checkpoint(state, filename='checkpoint.pth.tar'):
