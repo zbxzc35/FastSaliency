@@ -26,7 +26,7 @@ def plot_from_npy(npyfile):
     plt.plot(x, val_loss, ls='-', color='b')
     # plt.plot(x, val_acc, ls='-.', color='b')
     plt.plot(xx, tr_loss_detail, ls='-', color='y')
-    plt.legend(labels=['tr_loss', 'tr_accuracy', 'tr_detail_loss'], loc='best')
+    plt.legend(labels=['tr_loss', 'val_loss', 'tr_detail_loss'], loc='best')
     plt.xlabel('epoch')
     plt.ylabel('loss')
     plt.title('training loss')
